@@ -15,6 +15,8 @@ fn main() {
     player.append(source);
     player.pause();
 
+    let mut volume: f32 = 0.5;
+
     loop {
         let mut user_input = String::new();
 
@@ -36,6 +38,17 @@ fn main() {
                 player.pause();
                 println!("Turn off");
             }
+
+            "-" | "low" => {
+                volume = (volume - 0.1).max(0.0);
+                player.set_volume(volume);
+                println!("decrease");
+            }
+            "+" | "high" => {
+                volume = (volume + 0.1).max(0.0);
+                player.set_volume(volume);
+                println!("increase");
+            }
             _ => println!("missing command"),
         }
     }
@@ -48,6 +61,8 @@ fn help() {
         "s or pause - stop play music",
         "p or play - play music",
         "n or next - play next music",
+        "- or low - decrease volume",
+        "+ or high - increase",
     ];
 
     for element in help_print {
