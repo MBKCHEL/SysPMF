@@ -10,10 +10,9 @@ A fast, minimalist CLI-based music player written in Rust.
 
 ## Controls
 
-# Command	 Shortcut	 Description
-# help	      h	     Display help menu
-# play	      p	     Play music
-# pause	      s	     Pause playback
-# high	      +	     Increase volume
-# low	        -	     Decrease volume
-# quit	      q	     Exit application
+* **`p` / `play`** — Play music
+* **`s` / `pause`** — Pause playback
+* **`+` / `high`** — Increase volume
+* **`-` / `low`** — Decrease volume
+* **`h` / `help`** — Show help menu
+* **`q` / `quit`** — Exit
