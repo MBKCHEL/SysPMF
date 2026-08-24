@@ -5,6 +5,8 @@ use std::io::BufReader;
 use std::io::stdin;
 
 fn main() {
+    println!("SysPMF v0.1.0 by MBKCHEL | Type 'h' or 'help' for commands");
+
     let handle = rodio::DeviceSinkBuilder::open_default_sink().expect("open default audio stream");
 
     let player = rodio::Player::connect_new(&handle.mixer());
@@ -23,7 +25,7 @@ fn main() {
         .join("SysPMF");
 
     match fs::create_dir_all(&path) {
-        Ok(_) => println!("Folder SysPMF create in folder home"),
+        Ok(_) => print!(""),
         Err(e) => eprintln!("Error {e}"),
     };
 
@@ -72,7 +74,9 @@ fn help() {
         "p or play - play music",
         "n or next - play next music",
         "- or low - decrease volume",
-        "+ or high - increase",
+        "+ or high - increase volume",
+        "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
+        "Place your audio files in ~/SysPMF",
     ];
 
     for element in help_print {
