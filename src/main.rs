@@ -1,4 +1,5 @@
 use rodio;
+use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::stdin;
@@ -16,6 +17,15 @@ fn main() {
     player.pause();
 
     let mut volume: f32 = 0.5;
+
+    let path = dirs::home_dir()
+        .expect("Error, not found folder home ")
+        .join("SysPMF");
+
+    match fs::create_dir_all(&path) {
+        Ok(_) => println!("Folder SysPMF create in folder home"),
+        Err(e) => eprintln!("Error {e}"),
+    };
 
     loop {
         let mut user_input = String::new();
@@ -45,7 +55,7 @@ fn main() {
                 println!("decrease");
             }
             "+" | "high" => {
-                volume = (volume + 0.1).max(0.0);
+                volume = (volume + 0.5).max(0.0);
                 player.set_volume(volume);
                 println!("increase");
             }
