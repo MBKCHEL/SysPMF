@@ -16,3 +16,5 @@ A fast, minimalist CLI-based music player written in Rust.
 * **`-` / `low`** — Decrease volume
 * **`h` / `help`** — Show help menu
 * **`q` / `quit`** — Exit
+* **`n` / `next`** — next track
+* **`b` / `back`** — play previous music
