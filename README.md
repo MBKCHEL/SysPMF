@@ -18,3 +18,26 @@ A fast, minimalist CLI-based music player written in Rust.
 * **`q` / `quit`** — Exit
 * **`n` / `next`** — next track
 * **`b` / `back`** — play previous music
+  
+## Installation (Linux)
+### Fast Install (Pre-compiled Binary)
+
+1. Download the compiled binary from Releases:
+   ```bash
+   https://github.com/MBKCHEL/SysPMF/releases/tag/1.0.0
+   ```
+Make it executable:
+
+``` bash
+chmod +x syspmf-linux
+```
+
+### Move it to your local path to run it from anywhere:
+``` bash
+sudo mv syspmf-linux /usr/local/bin/syspmf
+```
+
+### Run the player:
+``` bash
+syspmf
+```
