@@ -76,13 +76,12 @@ fn main() {
                 }
             }
         });
-
+        
         loop {
             if !playlist.is_empty() && player.empty() && !is_paused {
                 current_index = (current_index + 1) % playlist.len();
                 play_current_track(&playlist, current_index, &player);
             }
-            
             if let Ok(command) = rx.try_recv() {
                 match command.as_str() {
                     "q" | "quit" => {
@@ -91,7 +90,7 @@ fn main() {
                     }
                     "h" | "help" => help(),
                     "p" | "play" => {
-                        is_paused = false; // Снимаем флаг паузы
+                        is_paused = false;
                         if player.empty() && !playlist.is_empty() {
                             play_current_track(&playlist, current_index, &player);
                         } else {
@@ -100,7 +99,7 @@ fn main() {
                         }
                     }
                     "s" | "pause" => {
-                        is_paused = true; 
+                        is_paused = true;
                         player.pause();
                         println!("Turn off");
                     }
@@ -136,7 +135,6 @@ fn main() {
                     _ => println!("missing command"),
                 }
             }
-
             thread::sleep(Duration::from_millis(50));
         }
     }
