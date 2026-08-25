@@ -3,10 +3,11 @@ mod scanner;
 use directories::UserDirs;
 use rodio;
 use std::fs;
-use std::io::stdin;
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 use std::path::PathBuf;
 
-// Вспомогательная функция для запуска трека и вывода его имени
 fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player) {
     if playlist.is_empty() {
         return;
@@ -40,6 +41,7 @@ fn main() {
 
         let playlist = scanner::find_audio_files(&path);
         let mut current_index: usize = 0;
+        let mut is_paused = true; 
 
         if !playlist.is_empty() {
             println!("--- Playlist ---");
@@ -61,56 +63,81 @@ fn main() {
 
         player.pause();
 
-        loop {
-            let mut user_input = String::new();
-            stdin().read_line(&mut user_input).expect("error");
+        let (tx, rx) = mpsc::channel::<String>();
 
-            match user_input.to_lowercase().as_str().trim() {
-                "q" | "quit" => {
-                    println!("leave");
-                    break;
-                }
-                "h" | "help" => help(),
-                "p" | "play" => {
-                    if player.empty() && !playlist.is_empty() {
-                        play_current_track(&playlist, current_index, &player);
-                    } else {
-                        player.play();
-                        println!("Turn on");
+        thread::spawn(move || {
+            loop {
+                let mut user_input = String::new();
+                if std::io::stdin().read_line(&mut user_input).is_ok() {
+                    let cmd = user_input.to_lowercase().trim().to_string();
+                    if tx.send(cmd).is_err() {
+                        break; 
                     }
                 }
-                "s" | "pause" => {
-                    player.pause();
-                    println!("Turn off");
-                }
-                "n" | "next" => {
-                    if !playlist.is_empty() {
-                        current_index = (current_index + 1) % playlist.len();
-                        play_current_track(&playlist, current_index, &player);
-                    }
-                }
-                "b" | "back" => {
-                    if !playlist.is_empty() {
-                        if current_index == 0 {
-                            current_index = playlist.len() - 1;
-                        } else {
-                            current_index -= 1;
-                        }
-                        play_current_track(&playlist, current_index, &player);
-                    }
-                }
-                "-" | "low" => {
-                    volume = (volume - 0.1).max(0.0);
-                    player.set_volume(volume);
-                    println!("decrease (current: {:.1})", volume);
-                }
-                "+" | "high" => {
-                    volume = (volume + 0.1).min(1.0);
-                    player.set_volume(volume);
-                    println!("increase (current: {:.1})", volume);
-                }
-                _ => println!("missing command"),
             }
+        });
+
+        loop {
+            if !playlist.is_empty() && player.empty() && !is_paused {
+                current_index = (current_index + 1) % playlist.len();
+                play_current_track(&playlist, current_index, &player);
+            }
+            
+            if let Ok(command) = rx.try_recv() {
+                match command.as_str() {
+                    "q" | "quit" => {
+                        println!("leave");
+                        break;
+                    }
+                    "h" | "help" => help(),
+                    "p" | "play" => {
+                        is_paused = false; // Снимаем флаг паузы
+                        if player.empty() && !playlist.is_empty() {
+                            play_current_track(&playlist, current_index, &player);
+                        } else {
+                            player.play();
+                            println!("Turn on");
+                        }
+                    }
+                    "s" | "pause" => {
+                        is_paused = true; 
+                        player.pause();
+                        println!("Turn off");
+                    }
+                    "n" | "next" => {
+                        if !playlist.is_empty() {
+                            is_paused = false;
+                            current_index = (current_index + 1) % playlist.len();
+                            play_current_track(&playlist, current_index, &player);
+                        }
+                    }
+                    "b" | "back" => {
+                        if !playlist.is_empty() {
+                            is_paused = false;
+                            if current_index == 0 {
+                                current_index = playlist.len() - 1;
+                            } else {
+                                current_index -= 1;
+                            }
+                            play_current_track(&playlist, current_index, &player);
+                        }
+                    }
+                    "-" | "low" => {
+                        volume = (volume - 0.1).max(0.0);
+                        player.set_volume(volume);
+                        println!("decrease (current: {:.1})", volume);
+                    }
+                    "+" | "high" => {
+                        volume = (volume + 0.1).min(1.0);
+                        player.set_volume(volume);
+                        println!("increase (current: {:.1})", volume);
+                    }
+                    "" => {} 
+                    _ => println!("missing command"),
+                }
+            }
+
+            thread::sleep(Duration::from_millis(50));
         }
     }
 }
