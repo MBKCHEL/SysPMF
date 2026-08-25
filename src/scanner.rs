@@ -16,7 +16,6 @@ pub fn find_audio_files<P: AsRef<Path>>(dir: P) -> Vec<PathBuf> {
                 {
                     Some(ext) if ext == "mp3" || ext == "ogg" || ext == "wav" => {
                         audio_files.push(path);
-
                     }
                     _ => {}
                 }
@@ -26,4 +25,3 @@ pub fn find_audio_files<P: AsRef<Path>>(dir: P) -> Vec<PathBuf> {
 
     audio_files
 }
-
