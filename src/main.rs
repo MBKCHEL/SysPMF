@@ -34,8 +34,6 @@ fn main() {
 
         stdin().read_line(&mut user_input).expect("error");
 
-        println!("{user_input}");
-
         match user_input.to_lowercase().as_str().trim() {
             "q" | "quit" => {
                 println!("leave");
@@ -57,7 +55,7 @@ fn main() {
                 println!("decrease");
             }
             "+" | "high" => {
-                volume = (volume + 0.5).max(0.0);
+                volume = (volume + 0.1).max(0.0);
                 player.set_volume(volume);
                 println!("increase");
             }
