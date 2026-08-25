@@ -23,9 +23,9 @@ A fast, minimalist CLI-based music player written in Rust.
 ### Fast Install (Pre-compiled Binary)
 
 1. Download the compiled binary from Releases:
-   ```bash
-   https://github.com/MBKCHEL/SysPMF/releases/tag/1.0.0
-   ```
+```bash
+https://github.com/MBKCHEL/SysPMF/releases/tag/1.0.0
+```
 Make it executable:
 
 ``` bash
