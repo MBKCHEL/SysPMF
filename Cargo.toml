@@ -5,5 +5,4 @@ edition = "2024"
 
 [dependencies]
 rodio = "0.22.2"
-walkdir = "2.5.0"
 directories = "6.0.0"
