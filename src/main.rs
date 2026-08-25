@@ -21,6 +21,7 @@ fn find_audio_files<P: AsRef<Path>>(dir: P) -> Vec<PathBuf> {
                 {
                     Some(ext) if ext == "mp3" || ext == "ogg" || ext == "wav" => {
                         audio_files.push(path);
+
                     }
                     _ => {}
                 }
@@ -29,6 +30,23 @@ fn find_audio_files<P: AsRef<Path>>(dir: P) -> Vec<PathBuf> {
     }
 
     audio_files
+}
+
+fn play_track(playlist: &[PathBuf], index: usize, player: &rodio::Player)  {
+     if let Some(track_path) = playlist.get(index) {
+         player.stop();
+         if let Ok(file) = File::open(&track_path) {
+             let reader = BufReader::new(file);
+             if let Ok(source) = rodio::Decoder::new(reader) {
+                 player.append(source);
+                 player.play();
+                 println!(
+                     "Selected track: {:?}",
+                     track_path.file_name().unwrap_or_default()
+                 );
+             }
+         }
+     }
 }
 
 fn main() {
@@ -42,65 +60,80 @@ fn main() {
 
     if let Some(user_dirs) = UserDirs::new() {
         let path = user_dirs.home_dir().join("SysPMF");
-
         if let Err(e) = fs::create_dir_all(&path) {
             eprintln!("Error creating directory: {e}");
         }
 
         let playlist = find_audio_files(&path);
+        let mut current_index: usize = 0;
+
+        if !playlist.is_empty() {
+            println!("--- Playlist ---");
+            for (i, track) in playlist.iter().enumerate() {
+                let file_name = track.file_name().unwrap_or_default();
+                println!("{}. {:?}", i + 1, file_name);
+            }
+            println!("----------------");
+        }
+
         println!("Found audio files in SysPMF: {}", playlist.len());
 
-        for track_path in playlist {
-            if let Ok(file) = File::open(&track_path) {
-                let reader = BufReader::new(file);
-                if let Ok(source) = rodio::Decoder::new(reader) {
-                    player.append(source);
-                    println!(
-                        "Added to queue: {:?}",
-                        track_path.file_name().unwrap_or_default()
-                    );
-                }
-            };
+        if !playlist.is_empty() {
+            play_track(&playlist, current_index, &player);
         }
-    } else {
-        eprintln!("Error! Could not find home directories");
-    }
 
-    player.pause();
+        player.pause();
 
-    loop {
-        let mut user_input = String::new();
-        stdin().read_line(&mut user_input).expect("error");
+        loop {
+            let mut user_input = String::new();
+            stdin().read_line(&mut user_input).expect("error");
 
-        match user_input.to_lowercase().as_str().trim() {
-            "q" | "quit" => {
-                println!("leave");
-                break;
+            match user_input.to_lowercase().as_str().trim() {
+                "q" | "quit" => {
+                    println!("leave");
+                    break;
+                }
+                "h" | "help" => help(),
+                "p" | "play" => {
+                    if player.empty() && !playlist.is_empty() {
+                        play_track(&playlist, current_index, &player);
+                    } else {
+                        player.play();
+                    }
+                    println!("Turn on");
+                }
+                "s" | "pause" => {
+                    player.pause();
+                    println!("Turn off");
+                }
+                "n" | "next" => {
+                    if !playlist.is_empty() {
+                        current_index = (current_index + 1) % playlist.len();
+                        play_track(&playlist, current_index, &player);
+                    }
+                }
+                "b" | "back" => {
+                    if !playlist.is_empty() {
+                        if current_index == 0 {
+                            current_index = playlist.len() - 1;
+                        } else {
+                            current_index -= 1;
+                        }
+                        play_track(&playlist, current_index, &player);
+                    }
+                }
+                "-" | "low" => {
+                    volume = (volume - 0.1).max(0.0);
+                    player.set_volume(volume);
+                    println!("decrease (current: {:.1})", volume);
+                }
+                "+" | "high" => {
+                    volume = (volume + 0.1).min(1.0);
+                    player.set_volume(volume);
+                    println!("increase (current: {:.1})", volume);
+                }
+                _ => println!("missing command"),
             }
-            "h" | "help" => help(),
-            "p" | "play" => {
-                player.play();
-                println!("Turn on");
-            }
-            "s" | "pause" => {
-                player.pause();
-                println!("Turn off");
-            }
-            "n" | "next" => {
-                player.skip_one();
-                println!("Next track");
-            }
-            "-" | "low" => {
-                volume = (volume - 0.1).max(0.0);
-                player.set_volume(volume);
-                println!("decrease (current: {:.1})", volume);
-            }
-            "+" | "high" => {
-                volume = (volume + 0.1).min(1.0);
-                player.set_volume(volume);
-                println!("increase (current: {:.1})", volume);
-            }
-            _ => println!("missing command"),
         }
     }
 }
@@ -112,6 +145,7 @@ fn help() {
         "s or pause - stop play music",
         "p or play - play music",
         "n or next - play next music",
+        "b or back - play previous music",
         "- or low - decrease volume",
         "+ or high - increase volume",
         "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
