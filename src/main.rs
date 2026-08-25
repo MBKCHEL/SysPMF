@@ -1,3 +1,4 @@
+use directories::UserDirs;
 use rodio;
 use std::fs;
 use std::fs::File;
@@ -20,14 +21,15 @@ fn main() {
 
     let mut volume: f32 = 0.5;
 
-    let path = dirs::home_dir()
-        .expect("Error, not found folder home ")
-        .join("SysPMF");
+    if let Some(user_dirs) = UserDirs::new() {
+        let path = user_dirs.home_dir().join("SysPMF");
 
-    match fs::create_dir_all(&path) {
-        Ok(_) => print!(""),
-        Err(e) => eprintln!("Error {e}"),
-    };
+        if let Err(e) = fs::create_dir_all(&path) {
+            eprintln!("Error :( {e}");
+        }
+    } else {
+        eprintln!("Error! Could not find home directories");
+    }
 
     loop {
         let mut user_input = String::new();
