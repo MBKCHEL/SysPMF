@@ -29,12 +29,12 @@ https://github.com/MBKCHEL/SysPMF/releases/tag/1.0.0
 Make it executable:
 
 ``` bash
-chmod +x syspmf-linux
-```
+chmod +x ~/Downloads/syspmf-linux
 
+```
 ### Move it to your local path to run it from anywhere:
 ``` bash
-sudo mv syspmf-linux /usr/local/bin/syspmf
+sudo mv ~/Downloads/syspmf-linux /usr/local/bin/syspmf
 ```
 
 ### Run the player:
