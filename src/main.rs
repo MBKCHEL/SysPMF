@@ -4,6 +4,24 @@ use directories::UserDirs;
 use rodio;
 use std::fs;
 use std::io::stdin;
+use std::path::PathBuf;
+
+// Вспомогательная функция для запуска трека и вывода его имени
+fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player) {
+    if playlist.is_empty() {
+        return;
+    }
+    let track = &playlist[index];
+    if player::play_track(track, player) {
+        let file_name = track
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("Unknown Track");
+        println!("Now playing [{}]: {}", index + 1, file_name);
+    } else {
+        println!("❌ Error playing track: {:?}", track);
+    }
+}
 
 fn main() {
     println!("SysPMF v0.1.0 by MBKCHEL | Type 'h' or 'help' for commands");
@@ -26,8 +44,11 @@ fn main() {
         if !playlist.is_empty() {
             println!("--- Playlist ---");
             for (i, track) in playlist.iter().enumerate() {
-                let file_name = track.file_name().unwrap_or_default();
-                println!("{}. {:?}", i + 1, file_name);
+                let file_name = track
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("Unknown");
+                println!("{}. {}", i + 1, file_name);
             }
             println!("----------------");
         }
@@ -35,7 +56,7 @@ fn main() {
         println!("Found audio files in SysPMF: {}", playlist.len());
 
         if !playlist.is_empty() {
-            player::play_playlist(&playlist[current_index..], &player);
+            play_current_track(&playlist, current_index, &player);
         }
 
         player.pause();
@@ -52,11 +73,11 @@ fn main() {
                 "h" | "help" => help(),
                 "p" | "play" => {
                     if player.empty() && !playlist.is_empty() {
-                        player::play_playlist(&playlist[current_index..], &player);
+                        play_current_track(&playlist, current_index, &player);
                     } else {
                         player.play();
+                        println!("Turn on");
                     }
-                    println!("Turn on");
                 }
                 "s" | "pause" => {
                     player.pause();
@@ -65,7 +86,7 @@ fn main() {
                 "n" | "next" => {
                     if !playlist.is_empty() {
                         current_index = (current_index + 1) % playlist.len();
-                        player::play_playlist(&playlist[current_index..], &player);
+                        play_current_track(&playlist, current_index, &player);
                     }
                 }
                 "b" | "back" => {
@@ -75,7 +96,7 @@ fn main() {
                         } else {
                             current_index -= 1;
                         }
-                        player::play_playlist(&playlist[current_index..], &player);
+                        play_current_track(&playlist, current_index, &player);
                     }
                 }
                 "-" | "low" => {
