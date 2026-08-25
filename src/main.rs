@@ -1,5 +1,5 @@
-mod scanner;
 mod player;
+mod scanner;
 use directories::UserDirs;
 use rodio;
 use std::fs;
@@ -35,7 +35,7 @@ fn main() {
         println!("Found audio files in SysPMF: {}", playlist.len());
 
         if !playlist.is_empty() {
-            player::play_track(&playlist, current_index, &player);
+            player::play_playlist(&playlist[current_index..], &player);
         }
 
         player.pause();
@@ -52,7 +52,7 @@ fn main() {
                 "h" | "help" => help(),
                 "p" | "play" => {
                     if player.empty() && !playlist.is_empty() {
-                        player::play_track(&playlist, current_index, &player);
+                        player::play_playlist(&playlist[current_index..], &player);
                     } else {
                         player.play();
                     }
@@ -65,7 +65,7 @@ fn main() {
                 "n" | "next" => {
                     if !playlist.is_empty() {
                         current_index = (current_index + 1) % playlist.len();
-                        player::play_track(&playlist, current_index, &player);
+                        player::play_playlist(&playlist[current_index..], &player);
                     }
                 }
                 "b" | "back" => {
@@ -75,7 +75,7 @@ fn main() {
                         } else {
                             current_index -= 1;
                         }
-                        player::play_track(&playlist, current_index, &player);
+                        player::play_playlist(&playlist[current_index..], &player);
                     }
                 }
                 "-" | "low" => {
