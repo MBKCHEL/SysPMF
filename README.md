@@ -20,6 +20,7 @@ A fast, minimalist CLI-based music player written in Rust.
 * **`b` / `back`** - play previous music
 * **`ml` / `micro-low`** - Decrease volume for 0.01
 * **`mh` / `micro-high`** - Increase volume for 0.01
+* **`list` / `ls` / `pl`** - Print u playlist
   
 ## Installation (Linux)
 ### Fast Install (Pre-compiled Binary)
