@@ -3,10 +3,10 @@ mod scanner;
 use directories::UserDirs;
 use rodio;
 use std::fs;
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-use std::path::PathBuf;
 
 fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player) {
     if playlist.is_empty() {
@@ -41,7 +41,7 @@ fn main() {
 
         let playlist = scanner::find_audio_files(&path);
         let mut current_index: usize = 0;
-        let mut is_paused = true; 
+        let mut is_paused = true;
 
         if !playlist.is_empty() {
             println!("--- Playlist ---");
@@ -71,12 +71,12 @@ fn main() {
                 if std::io::stdin().read_line(&mut user_input).is_ok() {
                     let cmd = user_input.to_lowercase().trim().to_string();
                     if tx.send(cmd).is_err() {
-                        break; 
+                        break;
                     }
                 }
             }
         });
-        
+
         loop {
             if !playlist.is_empty() && player.empty() && !is_paused {
                 current_index = (current_index + 1) % playlist.len();
@@ -103,7 +103,7 @@ fn main() {
                         player.pause();
                         println!("Turn off");
                     }
-                    "n" | "next" => {
+                    "n" | "f" | "next" | "forward" => {
                         if !playlist.is_empty() {
                             is_paused = false;
                             current_index = (current_index + 1) % playlist.len();
@@ -121,17 +121,17 @@ fn main() {
                             play_current_track(&playlist, current_index, &player);
                         }
                     }
-                    "-" | "low" => {
+                    "-" | "l" | "low" => {
                         volume = (volume - 0.1).max(0.0);
                         player.set_volume(volume);
                         println!("decrease (current: {:.1})", volume);
                     }
-                    "+" | "high" => {
+                    "+" | "u" | "high" => {
                         volume = (volume + 0.1).min(1.0);
                         player.set_volume(volume);
                         println!("increase (current: {:.1})", volume);
                     }
-                    "" => {} 
+                    "" => {}
                     _ => println!("missing command"),
                 }
             }
@@ -146,10 +146,10 @@ fn help() {
         "q or quit - leave",
         "s or pause - stop play music",
         "p or play - play music",
-        "n or next - play next music",
+        "n, next, f, forward - play next music",
         "b or back - play previous music",
-        "- or low - decrease volume",
-        "+ or high - increase volume",
+        "-, low, l - decrease volume",
+        "+, high, u - increase volume",
         "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
         "Place your audio files in ~/SysPMF",
     ];
