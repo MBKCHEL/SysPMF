@@ -124,12 +124,22 @@ fn main() {
                     "-" | "l" | "low" => {
                         volume = (volume - 0.1).max(0.0);
                         player.set_volume(volume);
-                        println!("decrease (current: {:.1})", volume);
+                        println!("decrease (current: {:.2})", volume);
+                    }
+                    "ml" | "micro-low" => {
+                        volume = (volume - 0.01).max(-1.0);
+                        player.set_volume(volume);
+                        println!("decrease (current: {:.2}", volume);
                     }
                     "+" | "u" | "high" => {
-                        volume = (volume + 0.1).min(1.0);
+                        volume = (volume + 0.1).min(2.0);
                         player.set_volume(volume);
-                        println!("increase (current: {:.1})", volume);
+                        println!("increase (current: {:.2})", volume);
+                    }
+                    "mh" | "micro-high" => {
+                        volume = (volume + 0.01).min(2.0);
+                        player.set_volume(volume);
+                        println!("increase (current: {:.2})", volume);
                     }
                     "" => {}
                     _ => println!("missing command"),
@@ -148,8 +158,10 @@ fn help() {
         "p or play - play music",
         "n, next, f, forward - play next music",
         "b or back - play previous music",
-        "-, low, l - decrease volume",
-        "+, high, u - increase volume",
+        "-, low, l - decrease volume for 0.1",
+        "ml, micro-low - decrease volume for 0.01",
+        "+, high, u - increase volume for 0.1",
+        "mh, micro-high - increase volume for 0.01",
         "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
         "Place your audio files in ~/SysPMF",
     ];
