@@ -10,14 +10,16 @@ A fast, minimalist CLI-based music player written in Rust.
 
 ## Controls
 
-* **`p` / `play`** — Play music
-* **`s` / `pause`** — Pause playback
-* **`+` / `high`** — Increase volume
-* **`-` / `low`** — Decrease volume
-* **`h` / `help`** — Show help menu
-* **`q` / `quit`** — Exit
-* **`n` / `next`** — next track
-* **`b` / `back`** — play previous music
+* **`p` / `play`** - Play music
+* **`s` / `pause`** - Pause playback
+* **`+` / `u` / `high`** - Increase volume for 0.1
+* **`-` / `l` / `low`** - Decrease volume for 0.1
+* **`h` / `help`** - Show help menu
+* **`q` / `quit`** - Exit
+* **`n` / `f` / `forward` / `next`** - next track
+* **`b` / `back`** - play previous music
+* **`ml` / `micro-low`** - Decrease volume for 0.01
+* **`mh` / `micro-high`** - Increase volume for 0.01
   
 ## Installation (Linux)
 ### Fast Install (Pre-compiled Binary)
@@ -40,4 +42,12 @@ sudo mv ~/Downloads/syspmf-linux /usr/local/bin/syspmf
 ### Run the player:
 ``` bash
 syspmf
+```
+
+## Uninstallation
+
+To remove SysPMF from your system:
+
+```bash
+sudo rm /usr/local/bin/syspmf
 ```
