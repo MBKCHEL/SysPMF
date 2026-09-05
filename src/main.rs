@@ -43,19 +43,7 @@ fn main() {
         let mut current_index: usize = 0;
         let mut is_paused = true;
 
-        if !playlist.is_empty() {
-            println!("--- Playlist ---");
-            for (i, track) in playlist.iter().enumerate() {
-                let file_name = track
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("Unknown");
-                println!("{}. {}", i + 1, file_name);
-            }
-            println!("----------------");
-        }
-
-        println!("Found audio files in SysPMF: {}", playlist.len());
+        playlist_print(&playlist);
 
         if !playlist.is_empty() {
             play_current_track(&playlist, current_index, &player);
@@ -141,6 +129,9 @@ fn main() {
                         player.set_volume(volume);
                         println!("increase (current: {:.2})", volume);
                     }
+                    "ls" | "pl" | "list" => {
+                        playlist_print(&playlist);
+                    }
                     "" => {}
                     _ => println!("missing command"),
                 }
@@ -162,6 +153,7 @@ fn help() {
         "ml, micro-low - decrease volume for 0.01",
         "+, high, u - increase volume for 0.1",
         "mh, micro-high - increase volume for 0.01",
+        "ls, pl, list - print your playlist",
         "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
         "Place your audio files in ~/SysPMF",
     ];
@@ -169,4 +161,19 @@ fn help() {
     for element in help_print {
         println!("{element}");
     }
+}
+
+fn playlist_print(playlist: &Vec<PathBuf>) {
+    if !playlist.is_empty() {
+        println!("--- Playlist ---");
+        for (i, track) in playlist.iter().enumerate() {
+            let file_name = track
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("Unknown");
+            println!("{}. {}", i + 1, file_name);
+        }
+        println!("----------------");
+    }
+    println!("Found audio files in SysPMF: {}", playlist.len());
 }
