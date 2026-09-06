@@ -3,7 +3,7 @@ mod scanner;
 use directories::UserDirs;
 use rodio;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{PathBuf};
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -25,7 +25,7 @@ fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player
 }
 
 fn main() {
-    println!("SysPMF v0.1.0 by MBKCHEL | Type 'h' or 'help' for commands");
+    println!("SysPMF v1.0.6 by MBKCHEL | Type 'h' or 'help' for commands");
 
     let handle = rodio::DeviceSinkBuilder::open_default_sink().expect("open default audio stream");
     let player = rodio::Player::connect_new(&handle.mixer());
@@ -39,14 +39,21 @@ fn main() {
             eprintln!("Error creating directory: {e}");
         }
 
-        let playlist = scanner::find_audio_files(&path);
-        let mut current_index: usize = 0;
+        let playlists = scanner::scan_playlists(&path);
+        if playlists.is_empty() {
+            println!("No audio files found in ~/SysPMF!");
+            return;
+        }
+
+        let mut current_playlist_idx: usize = 0;
+        let mut current_track_idx: usize = 0;
         let mut is_paused = true;
 
-        playlist_print(&playlist);
+        playlists_menu_print(&playlists);
+        playlist_print(&playlists[current_playlist_idx]);
 
-        if !playlist.is_empty() {
-            play_current_track(&playlist, current_index, &player);
+        if !playlists[current_playlist_idx].tracks.is_empty() {
+            play_current_track(&playlists[current_playlist_idx].tracks, current_track_idx, &player);
         }
 
         player.pause();
@@ -66,21 +73,47 @@ fn main() {
         });
 
         loop {
-            if !playlist.is_empty() && player.empty() && !is_paused {
-                current_index = (current_index + 1) % playlist.len();
-                play_current_track(&playlist, current_index, &player);
+            let active_playlist = &playlists[current_playlist_idx];
+            if !active_playlist.tracks.is_empty() && player.empty() && !is_paused {
+                current_track_idx = (current_track_idx + 1) % active_playlist.tracks.len();
+                play_current_track(&active_playlist.tracks, current_track_idx, &player);
             }
+
             if let Ok(command) = rx.try_recv() {
+                let active_playlist = &playlists[current_playlist_idx];
+
                 match command.as_str() {
                     "q" | "quit" => {
                         println!("leave");
                         break;
                     }
                     "h" | "help" => help(),
+                    "pls" | "folders" => {
+                        playlists_menu_print(&playlists);
+                    }
+                    cmd if cmd.starts_with("cd ") => {
+                        if let Ok(num) = cmd.trim_start_matches("cd ").trim().parse::<usize>() {
+                            if num > 0 && num <= playlists.len() {
+                                current_playlist_idx = num - 1;
+                                current_track_idx = 0;
+                                is_paused = false;
+
+                                let new_playlist = &playlists[current_playlist_idx];
+                                println!("📁 Switched to: {}", new_playlist.name);
+                                playlist_print(new_playlist);
+
+                                if !new_playlist.tracks.is_empty() {
+                                    play_current_track(&new_playlist.tracks, current_track_idx, &player);
+                                }
+                            } else {
+                                println!("❌ Invalid playlist number!");
+                            }
+                        }
+                    }
                     "p" | "play" => {
                         is_paused = false;
-                        if player.empty() && !playlist.is_empty() {
-                            play_current_track(&playlist, current_index, &player);
+                        if player.empty() && !active_playlist.tracks.is_empty() {
+                            play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         } else {
                             player.play();
                             println!("Turn on");
@@ -92,21 +125,21 @@ fn main() {
                         println!("Turn off");
                     }
                     "n" | "f" | "next" | "forward" => {
-                        if !playlist.is_empty() {
+                        if !active_playlist.tracks.is_empty() {
                             is_paused = false;
-                            current_index = (current_index + 1) % playlist.len();
-                            play_current_track(&playlist, current_index, &player);
+                            current_track_idx = (current_track_idx + 1) % active_playlist.tracks.len();
+                            play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         }
                     }
                     "b" | "back" => {
-                        if !playlist.is_empty() {
+                        if !active_playlist.tracks.is_empty() {
                             is_paused = false;
-                            if current_index == 0 {
-                                current_index = playlist.len() - 1;
+                            if current_track_idx == 0 {
+                                current_track_idx = active_playlist.tracks.len() - 1;
                             } else {
-                                current_index -= 1;
+                                current_track_idx -= 1;
                             }
-                            play_current_track(&playlist, current_index, &player);
+                            play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         }
                     }
                     "-" | "l" | "low" => {
@@ -115,9 +148,9 @@ fn main() {
                         println!("decrease (current: {:.2})", volume);
                     }
                     "ml" | "micro-low" => {
-                        volume = (volume - 0.01).max(-1.0);
+                        volume = (volume - 0.01).max(0.0);
                         player.set_volume(volume);
-                        println!("decrease (current: {:.2}", volume);
+                        println!("decrease (current: {:.2})", volume);
                     }
                     "+" | "u" | "high" => {
                         volume = (volume + 0.1).min(2.0);
@@ -130,7 +163,7 @@ fn main() {
                         println!("increase (current: {:.2})", volume);
                     }
                     "ls" | "pl" | "list" => {
-                        playlist_print(&playlist);
+                        playlist_print(active_playlist);
                     }
                     "" => {}
                     _ => println!("missing command"),
@@ -141,8 +174,31 @@ fn main() {
     }
 }
 
+fn playlists_menu_print(playlists: &[scanner::Playlist]) {
+    println!("\n--- Available Playlists ---");
+    for (i, pl) in playlists.iter().enumerate() {
+        println!("\t{}. {} ({} tracks)", i + 1, pl.name, pl.tracks.len());
+    }
+    println!("---------------------------");
+}
+
+fn playlist_print(playlist: &scanner::Playlist) {
+    println!("\n--- Playlist: {} ---", playlist.name);
+    for (i, track) in playlist.tracks.iter().enumerate() {
+        let file_name = track
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("Unknown");
+        println!("{}. {}", i + 1, file_name);
+    }
+    println!("----------------------------");
+    println!("\tTotal tracks: {}", playlist.tracks.len());
+}
+
 fn help() {
     let help_print = [
+        "Type 'cd <number>' to switch playlist",
+        "pls or folders - list all available folders/playlists",
         "h or help - print all command",
         "q or quit - leave",
         "s or pause - stop play music",
@@ -161,19 +217,4 @@ fn help() {
     for element in help_print {
         println!("{element}");
     }
-}
-
-fn playlist_print(playlist: &Vec<PathBuf>) {
-    if !playlist.is_empty() {
-        println!("--- Playlist ---");
-        for (i, track) in playlist.iter().enumerate() {
-            let file_name = track
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("Unknown");
-            println!("{}. {}", i + 1, file_name);
-        }
-        println!("----------------");
-    }
-    println!("Found audio files in SysPMF: {}", playlist.len());
 }
