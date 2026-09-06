@@ -189,7 +189,7 @@ fn playlist_print(playlist: &scanner::Playlist) {
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("Unknown");
-        println!("{}. {}", i + 1, file_name);
+        println!("\t{}. {}", i + 1, file_name);
     }
     println!("----------------------------");
     println!("\tTotal tracks: {}", playlist.tracks.len());
