@@ -3,10 +3,12 @@ mod scanner;
 use directories::UserDirs;
 use rodio;
 use std::fs;
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
+
+use crate::scanner::Playlist;
 
 fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player) {
     if playlist.is_empty() {
@@ -39,7 +41,7 @@ fn main() {
             eprintln!("Error creating directory: {e}");
         }
 
-        let playlists = scanner::scan_playlists(&path);
+        let mut playlists = scanner::scan_playlists(&path);
         if playlists.is_empty() {
             println!("No audio files found in ~/SysPMF!");
             return;
@@ -53,7 +55,11 @@ fn main() {
         playlist_print(&playlists[current_playlist_idx]);
 
         if !playlists[current_playlist_idx].tracks.is_empty() {
-            play_current_track(&playlists[current_playlist_idx].tracks, current_track_idx, &player);
+            play_current_track(
+                &playlists[current_playlist_idx].tracks,
+                current_track_idx,
+                &player,
+            );
         }
 
         player.pause();
@@ -103,7 +109,11 @@ fn main() {
                                 playlist_print(new_playlist);
 
                                 if !new_playlist.tracks.is_empty() {
-                                    play_current_track(&new_playlist.tracks, current_track_idx, &player);
+                                    play_current_track(
+                                        &new_playlist.tracks,
+                                        current_track_idx,
+                                        &player,
+                                    );
                                 }
                             } else {
                                 println!("❌ Invalid playlist number!");
@@ -127,7 +137,8 @@ fn main() {
                     "n" | "f" | "next" | "forward" => {
                         if !active_playlist.tracks.is_empty() {
                             is_paused = false;
-                            current_track_idx = (current_track_idx + 1) % active_playlist.tracks.len();
+                            current_track_idx =
+                                (current_track_idx + 1) % active_playlist.tracks.len();
                             play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         }
                     }
@@ -165,6 +176,25 @@ fn main() {
                     "ls" | "pl" | "list" => {
                         playlist_print(active_playlist);
                     }
+                    "c" | "check" => {
+                        playlists = scanner::scan_playlists(&path);
+
+                        if playlists.is_empty() {
+                            println!("⚠️ No audio files found after rescan!");
+                        } else {
+                            if current_playlist_idx >= playlists.len() {
+                                current_playlist_idx = 0;
+                                current_track_idx = 0;
+                            } else if current_track_idx
+                                >= playlists[current_playlist_idx].tracks.len()
+                            {
+                                current_track_idx = 0;
+                            }
+
+                            playlist_print(&playlists[current_playlist_idx]);
+                        }
+                    }
+
                     "" => {}
                     _ => println!("missing command"),
                 }

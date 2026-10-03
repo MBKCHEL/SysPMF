@@ -44,7 +44,11 @@ fn collect_files_in_dir(dir: &Path) -> Vec<PathBuf> {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file() {
-                if let Some(ext) = path.extension().and_then(|s| s.to_str()).map(|s| s.to_lowercase()) {
+                if let Some(ext) = path
+                    .extension()
+                    .and_then(|s| s.to_str())
+                    .map(|s| s.to_lowercase())
+                {
                     if ext == "mp3" || ext == "ogg" || ext == "wav" || ext == "flac" {
                         files.push(path);
                     }
