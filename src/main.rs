@@ -26,6 +26,16 @@ fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player
     }
 }
 
+/// "p 40" / "play 40" / "з 40" -> Some(40)
+fn parse_play_arg(cmd: &str) -> Option<usize> {
+    let mut it = cmd.split_whitespace();
+    let first = it.next()?;
+    if !matches!(first, "p" | "play" | "з") {
+        return None;
+    }
+    it.next()?.parse().ok()
+}
+
 fn main() {
     println!("SysPMF v1.0.6 by MBKCHEL | Type 'h' or 'help' for commands");
 
@@ -118,6 +128,19 @@ fn main() {
                             } else {
                                 println!("❌ Invalid playlist number!");
                             }
+                        }
+                    }
+                    cmd if parse_play_arg(cmd).is_some() => {
+                        let num = parse_play_arg(cmd).unwrap();
+                        if num >= 1 && num <= active_playlist.tracks.len() {
+                            current_track_idx = num - 1;
+                            is_paused = false;
+                            play_current_track(&active_playlist.tracks, current_track_idx, &player);
+                        } else {
+                            println!(
+                                "❌ Invalid track number! (1-{})",
+                                active_playlist.tracks.len()
+                            );
                         }
                     }
                     "p" | "play" | "з" => {
@@ -233,6 +256,7 @@ fn help() {
         "q or quit - leave",
         "s or pause - stop play music",
         "p or play - play music",
+        "p <number>, play <number> - play track by its number in the current playlist",
         "n, next, f, forward - play next music",
         "b or back - play previous music",
         "-, low, l - decrease volume for 0.1",
@@ -242,6 +266,7 @@ fn help() {
         "ls, pl, list - print your playlist",
         "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
         "Place your audio files in ~/SysPMF",
+        "M3U/M3U8 playlists in ~/SysPMF are loaded automatically (shown as [m3u] name)",
     ];
 
     for element in help_print {
