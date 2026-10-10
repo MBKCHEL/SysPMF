@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-rodio = { version = "0.22.2", features = ["symphonia-all"] }
+rodio = "0.22"
 directories = "6.0.0"
+symphonia = { version = "0.5", features = ["all"] }
+symphonia-adapter-libopus = "0.2"

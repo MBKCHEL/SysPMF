@@ -1,5 +1,7 @@
 mod player;
 mod scanner;
+mod dekoder;
+
 use directories::UserDirs;
 use rodio;
 use std::fs;
@@ -7,8 +9,6 @@ use std::path::PathBuf;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
-
-use crate::scanner::Playlist;
 
 fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player) {
     if playlist.is_empty() {

@@ -1,16 +1,17 @@
-use std::fs::File;
-use std::io::BufReader;
 use std::path::Path;
+use crate::dekoder;
 
 pub fn play_track<P: AsRef<Path>>(track_path: P, player: &rodio::Player) -> bool {
     player.stop();
-    if let Ok(file) = File::open(track_path) {
-        let reader = BufReader::new(file);
-        if let Ok(source) = rodio::Decoder::new(reader) {
+    match dekoder::AnySource::open(track_path) {
+        Ok(source) => {
             player.append(source);
             player.play();
-            return true;
+            true
+        }
+        Err(e) => {
+            eprintln!("Не удалось открыть трек: {e}");
+            false
         }
     }
-    false
 }
