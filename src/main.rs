@@ -89,11 +89,11 @@ fn main() {
                 let active_playlist = &playlists[current_playlist_idx];
 
                 match command.as_str() {
-                    "q" | "quit" => {
+                    "q" | "quit" | "й" => {
                         println!("leave");
                         break;
                     }
-                    "h" | "help" => help(),
+                    "h" | "help" | "р" => help(),
                     "pls" | "folders" => {
                         playlists_menu_print(&playlists);
                     }
@@ -120,7 +120,7 @@ fn main() {
                             }
                         }
                     }
-                    "p" | "play" => {
+                    "p" | "play" | "з" => {
                         is_paused = false;
                         if player.empty() && !active_playlist.tracks.is_empty() {
                             play_current_track(&active_playlist.tracks, current_track_idx, &player);
@@ -129,12 +129,12 @@ fn main() {
                             println!("Turn on");
                         }
                     }
-                    "s" | "pause" => {
+                    "s" | "pause" | "ы" => {
                         is_paused = true;
                         player.pause();
                         println!("Turn off");
                     }
-                    "n" | "f" | "next" | "forward" => {
+                    "n" | "f" | "next" | "forward" | "т" => {
                         if !active_playlist.tracks.is_empty() {
                             is_paused = false;
                             current_track_idx =
@@ -142,7 +142,7 @@ fn main() {
                             play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         }
                     }
-                    "b" | "back" => {
+                    "b" | "back" | "и" => {
                         if !active_playlist.tracks.is_empty() {
                             is_paused = false;
                             if current_track_idx == 0 {

@@ -49,7 +49,7 @@ fn collect_files_in_dir(dir: &Path) -> Vec<PathBuf> {
                     .and_then(|s| s.to_str())
                     .map(|s| s.to_lowercase())
                 {
-                    if ext == "mp3" || ext == "ogg" || ext == "wav" || ext == "flac" {
+                    if matches!(ext.as_str(), "mp3" | "ogg" | "wav" | "flac" | "opus" | "m4a") {
                         files.push(path);
                     }
                 }
