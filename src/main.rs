@@ -123,7 +123,7 @@ fn main() {
                         break;
                     }
                     "h" | "help" | "р" => help(),
-                    "pls" | "folders" => {
+                    "pls" | "folders" | "plm" => {
                         playlists_menu_print(&playlists);
                     }
                     "rnd_mode" | "rnm" => {
@@ -148,7 +148,7 @@ fn main() {
                                 is_paused = false;
 
                                 let new_playlist = &playlists[current_playlist_idx];
-                                println!("📁 Switched to: {}", new_playlist.name);
+                                println!("Switched to: {}", new_playlist.name);
                                 playlist_print(new_playlist);
 
                                 if shuffle.is_some() {
@@ -304,29 +304,60 @@ fn playlist_print(playlist: &scanner::Playlist) {
 }
 
 fn help() {
-    let help_print = [
-        "Type 'cd <number>' to switch playlist",
-        "pls or folders - list all available folders/playlists",
-        "h or help - print all command",
-        "q or quit - leave",
-        "s or pause - stop play music",
-        "p or play - play music",
-        "p <number>, play <number> - play track by its number in the current playlist",
-        "n, next, f, forward - play next music",
-        "b or back - play previous music",
-        "rnd_mode, rnm - toggle random mode (off by default)",
-        "-, low, l - decrease volume for 0.1",
-        "ml, micro-low - decrease volume for 0.01",
-        "+, high, u - increase volume for 0.1",
-        "mh, micro-high - increase volume for 0.01",
-        "ls, pl, list - print your playlist",
-        "c or check - rescan audio directory",
-        "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
-        "Place your audio files in ~/SysPMF",
-        "M3U/M3U8 playlists in ~/SysPMF are loaded automatically (shown as [m3u] name)",
+    const SECTIONS: &[(&str, &[(&str, &str)])] = &[
+        (
+            "Playback",
+            &[
+                ("p, play", "play / resume"),
+                ("p <n>, play <n>", "play track number n in the current playlist"),
+                ("s, pause", "pause"),
+                ("n, next, f, forward", "next track"),
+                ("b, back", "previous track"),
+                ("rnm, rnd_mode", "toggle random mode (off by default)"),
+            ],
+        ),
+        (
+            "Volume",
+            &[
+                ("+, high, u", "volume +0.1"),
+                ("-, low, l", "volume -0.1"),
+                ("mh, micro-high", "volume +0.01"),
+                ("ml, micro-low", "volume -0.01"),
+            ],
+        ),
+        (
+            "Playlists",
+            &[
+                ("cd <n>", "switch to playlist number n"),
+                ("pls, plm, folders", "list all playlists"),
+                ("ls, pl, list", "list tracks in the current playlist"),
+                ("c, check", "rescan ~/SysPMF"),
+            ],
+        ),
+        (
+            "Other",
+            &[
+                ("h, help", "show this help"),
+                ("q, quit", "exit"),
+            ],
+        ),
     ];
 
-    for element in help_print {
-        println!("{element}");
+    let width = SECTIONS
+        .iter()
+        .flat_map(|(_, cmds)| cmds.iter())
+        .map(|(keys, _)| keys.len())
+        .max()
+        .unwrap_or(0);
+
+    for (title, cmds) in SECTIONS {
+        println!("\n{title}");
+        for (keys, desc) in cmds.iter() {
+            println!("  {keys:<width$}  {desc}");
+        }
     }
+
+    println!("\nAudio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)");
+    println!("M3U/M3U8 playlists are loaded automatically (shown as [m3u] name)");
+    println!("Russian layout works too: й, р, з, ы, т, и");
 }
