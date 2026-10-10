@@ -8,3 +8,4 @@ rodio = "0.22"
 directories = "6.0.0"
 symphonia = { version = "0.5", features = ["all"] }
 symphonia-adapter-libopus = "0.2"
+rand = "0.9"

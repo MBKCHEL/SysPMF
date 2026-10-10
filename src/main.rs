@@ -1,9 +1,11 @@
+mod dekoder;
 mod player;
 mod scanner;
-mod dekoder;
+mod shuffle;
 
 use directories::UserDirs;
 use rodio;
+use shuffle::Shuffle;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -22,7 +24,22 @@ fn play_current_track(playlist: &[PathBuf], index: usize, player: &rodio::Player
             .unwrap_or("Unknown Track");
         println!("Now playing [{}]: {}", index + 1, file_name);
     } else {
-        println!("❌ Error playing track: {:?}", track);
+        println!("Error playing track: {:?}", track);
+    }
+}
+
+fn next_index(current: usize, len: usize, shuffle: &mut Option<Shuffle>) -> usize {
+    match shuffle {
+        Some(s) => s.next(),
+        None => (current + 1) % len,
+    }
+}
+
+fn prev_index(current: usize, len: usize, shuffle: &mut Option<Shuffle>) -> usize {
+    match shuffle {
+        Some(s) => s.prev(),
+        None if current == 0 => len - 1,
+        None => current - 1,
     }
 }
 
@@ -37,7 +54,7 @@ fn parse_play_arg(cmd: &str) -> Option<usize> {
 }
 
 fn main() {
-    println!("SysPMF v1.0.6 by MBKCHEL | Type 'h' or 'help' for commands");
+    println!("SysPMF by MBKCHEL | Type 'h' or 'help' for commands");
 
     let handle = rodio::DeviceSinkBuilder::open_default_sink().expect("open default audio stream");
     let player = rodio::Player::connect_new(&handle.mixer());
@@ -60,6 +77,7 @@ fn main() {
         let mut current_playlist_idx: usize = 0;
         let mut current_track_idx: usize = 0;
         let mut is_paused = true;
+        let mut shuffle: Option<Shuffle> = None;
 
         playlists_menu_print(&playlists);
         playlist_print(&playlists[current_playlist_idx]);
@@ -91,7 +109,8 @@ fn main() {
         loop {
             let active_playlist = &playlists[current_playlist_idx];
             if !active_playlist.tracks.is_empty() && player.empty() && !is_paused {
-                current_track_idx = (current_track_idx + 1) % active_playlist.tracks.len();
+                current_track_idx =
+                    next_index(current_track_idx, active_playlist.tracks.len(), &mut shuffle);
                 play_current_track(&active_playlist.tracks, current_track_idx, &player);
             }
 
@@ -107,6 +126,20 @@ fn main() {
                     "pls" | "folders" => {
                         playlists_menu_print(&playlists);
                     }
+                    "rnd_mode" | "rnm" => {
+                        if shuffle.is_some() {
+                            shuffle = None;
+                            println!("Random mode: off");
+                        } else if active_playlist.tracks.is_empty() {
+                            println!("Playlist is empty!");
+                        } else {
+                            shuffle = Some(Shuffle::new(
+                                active_playlist.tracks.len(),
+                                Some(current_track_idx),
+                            ));
+                            println!("Random mode: on");
+                        }
+                    }
                     cmd if cmd.starts_with("cd ") => {
                         if let Ok(num) = cmd.trim_start_matches("cd ").trim().parse::<usize>() {
                             if num > 0 && num <= playlists.len() {
@@ -118,6 +151,12 @@ fn main() {
                                 println!("📁 Switched to: {}", new_playlist.name);
                                 playlist_print(new_playlist);
 
+                                if shuffle.is_some() {
+                                    let s = Shuffle::new(new_playlist.tracks.len(), None);
+                                    current_track_idx = s.current();
+                                    shuffle = Some(s);
+                                }
+
                                 if !new_playlist.tracks.is_empty() {
                                     play_current_track(
                                         &new_playlist.tracks,
@@ -126,7 +165,7 @@ fn main() {
                                     );
                                 }
                             } else {
-                                println!("❌ Invalid playlist number!");
+                                println!("Invalid playlist number!");
                             }
                         }
                     }
@@ -135,10 +174,16 @@ fn main() {
                         if num >= 1 && num <= active_playlist.tracks.len() {
                             current_track_idx = num - 1;
                             is_paused = false;
+                            if shuffle.is_some() {
+                                shuffle = Some(Shuffle::new(
+                                    active_playlist.tracks.len(),
+                                    Some(current_track_idx),
+                                ));
+                            }
                             play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         } else {
                             println!(
-                                "❌ Invalid track number! (1-{})",
+                                "Invalid track number! (1-{})",
                                 active_playlist.tracks.len()
                             );
                         }
@@ -160,19 +205,22 @@ fn main() {
                     "n" | "f" | "next" | "forward" | "т" => {
                         if !active_playlist.tracks.is_empty() {
                             is_paused = false;
-                            current_track_idx =
-                                (current_track_idx + 1) % active_playlist.tracks.len();
+                            current_track_idx = next_index(
+                                current_track_idx,
+                                active_playlist.tracks.len(),
+                                &mut shuffle,
+                            );
                             play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         }
                     }
                     "b" | "back" | "и" => {
                         if !active_playlist.tracks.is_empty() {
                             is_paused = false;
-                            if current_track_idx == 0 {
-                                current_track_idx = active_playlist.tracks.len() - 1;
-                            } else {
-                                current_track_idx -= 1;
-                            }
+                            current_track_idx = prev_index(
+                                current_track_idx,
+                                active_playlist.tracks.len(),
+                                &mut shuffle,
+                            );
                             play_current_track(&active_playlist.tracks, current_track_idx, &player);
                         }
                     }
@@ -203,7 +251,7 @@ fn main() {
                         playlists = scanner::scan_playlists(&path);
 
                         if playlists.is_empty() {
-                            println!("⚠️ No audio files found after rescan!");
+                            println!("No audio files found after rescan!");
                         } else {
                             if current_playlist_idx >= playlists.len() {
                                 current_playlist_idx = 0;
@@ -212,6 +260,13 @@ fn main() {
                                 >= playlists[current_playlist_idx].tracks.len()
                             {
                                 current_track_idx = 0;
+                            }
+
+                            if shuffle.is_some() {
+                                shuffle = Some(Shuffle::new(
+                                    playlists[current_playlist_idx].tracks.len(),
+                                    Some(current_track_idx),
+                                ));
                             }
 
                             playlist_print(&playlists[current_playlist_idx]);
@@ -259,11 +314,13 @@ fn help() {
         "p <number>, play <number> - play track by its number in the current playlist",
         "n, next, f, forward - play next music",
         "b or back - play previous music",
+        "rnd_mode, rnm - toggle random mode (off by default)",
         "-, low, l - decrease volume for 0.1",
         "ml, micro-low - decrease volume for 0.01",
         "+, high, u - increase volume for 0.1",
         "mh, micro-high - increase volume for 0.01",
         "ls, pl, list - print your playlist",
+        "c or check - rescan audio directory",
         "Audio directory: ~/SysPMF (or C:/Users/<User>/SysPMF)",
         "Place your audio files in ~/SysPMF",
         "M3U/M3U8 playlists in ~/SysPMF are loaded automatically (shown as [m3u] name)",
